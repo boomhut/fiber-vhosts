@@ -194,3 +194,8 @@ var vhosts *Vhosts
 func init() {
 	vhosts = &Vhosts{}
 }
+
+// Init initializes the vhosts list from a file at the given path
+func Init(path string) error {
+	return vhosts.Load(path)
+}
