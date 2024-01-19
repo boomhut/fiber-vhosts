@@ -4,13 +4,15 @@ import (
 	"encoding/gob"
 	"os"
 	"sync"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Vhost struct {
-	Hostname   string       // hostname is the hostname of the vhost
-	Path       string       // path is the path of the vhost
-	WebsiteID  string       // websiteID is the websiteID of the vhost
-	Middleware func() error // middleware is the middleware for the vhost
+	Hostname   string          // hostname is the hostname of the vhost
+	Path       string          // path is the path of the vhost
+	WebsiteID  string          // websiteID is the websiteID of the vhost
+	Middleware FiberMiddleware // middleware is the middleware for the vhost
 }
 
 // vhosts contains all the vhosts protected by mutex lock for concurrent access safety
@@ -21,8 +23,10 @@ type Vhosts struct {
 	mutex sync.RWMutex
 }
 
+type FiberMiddleware func(*fiber.Ctx) error
+
 // NewVhost returns a new vhost with the given hostname, path, websiteID and middleware
-func NewVhost(hostname, path, websiteID string, middleware func() error) Vhost {
+func NewVhost(hostname, path, websiteID string, middleware FiberMiddleware) Vhost {
 	return Vhost{
 		Hostname:   hostname,
 		Path:       path,
@@ -77,7 +81,7 @@ func (v *Vhosts) getVhosts() []Vhost {
 }
 
 // get middleware returns the middleware for the vhost with the given hostname
-func (v *Vhosts) getMiddleware(hostname string) (func() error, bool) {
+func (v *Vhosts) getMiddleware(hostname string) (func(*fiber.Ctx) error, bool) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	for _, vhost := range v.Vhosts {
@@ -181,4 +185,12 @@ func openFile(path string) (*os.File, error) {
 	}
 
 	return file, nil
+}
+
+// vhosts is the vhosts list
+var vhosts *Vhosts
+
+// init initializes the vhosts list
+func init() {
+	vhosts = &Vhosts{}
 }

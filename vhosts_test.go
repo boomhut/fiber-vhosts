@@ -3,6 +3,8 @@ package vhosts
 import (
 	"os"
 	"testing"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func TestAdd(t *testing.T) {
@@ -73,7 +75,7 @@ func TestGetVhosts(t *testing.T) {
 
 func TestGetMiddleware(t *testing.T) {
 	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com", Middleware: func() error { return nil }}
+	Vhost := Vhost{Hostname: "test.com", Middleware: func(c *fiber.Ctx) error { return nil }}
 	v.Add(Vhost)
 
 	_, ok := v.getMiddleware("test.com")
