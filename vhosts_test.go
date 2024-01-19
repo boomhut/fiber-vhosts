@@ -132,47 +132,78 @@ func TestSaveAndLoad(t *testing.T) {
 // load from a file that doesn't exist
 func TestLoadFileDoesNotExist(t *testing.T) {
 	v := &Vhosts{}
-	err := v.Load("test.gob")
+	err := v.Load("testx.gob")
 	if err == nil {
 		t.Errorf("Expected to get error when loading from file that doesn't exist")
 	}
 
 }
 
-// save to a file that doesn't exist
-func TestSaveFileDoesNotExist(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com"}
-	v.Add(Vhost)
-	err := v.Save("test.gob")
-	if err != nil {
-		t.Errorf("Failed to save Vhosts: %v", err)
-	}
-
-	// Cleanup
-	os.Remove("test.gob")
+// Mock middleware function for testing
+func mockMiddleware(c *fiber.Ctx) error {
+	return c.SendString("Hello, World!")
 }
 
-// test creating and opening a file
-func TestCreateAndOpenFile(t *testing.T) {
-	testTxt, err := createFile("test.txt")
-	if err != nil {
-		t.Errorf("Failed to create file: %v", err)
-	}
-	defer testTxt.Close()
+func TestInitVHostDataFile(t *testing.T) {
 
-	testTxt, err = openFile("test.txt")
+	// create a file to test
+	file, err := os.Create("testfile.bin")
 	if err != nil {
-		t.Errorf("Failed to open file: %v", err)
+		t.Errorf("Failed to create test file: %s", err)
 	}
-	defer testTxt.Close()
+	file.Close()
 
-	// Cleanup
-	os.Remove("test.txt")
+	// put some data in the file to test
+	file, err = os.OpenFile("testfile.bin", os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		t.Errorf("Failed to open test file: %s", err)
+	}
+
+	vhtest := []Vhost{
+		{
+			Hostname: "test.com",
+			Middleware: func(c *fiber.Ctx) error {
+				return c.Status(200).SendString("Hello, World!")
+			},
+		},
+		{
+			Hostname: "test2.com",
+			Middleware: func(c *fiber.Ctx) error {
+				return c.Status(200).SendString("Hello, World!")
+			},
+		},
+	}
+
+	err = gobEncode(file, vhtest)
+	if err != nil {
+		t.Errorf("Failed to encode test data: %s", err)
+	}
+
+	// close the file
+	file.Close()
+
+	// use the gob encoder to encode some data to the file
+
+	err = InitVHostDataFile("testfile.bin")
+	if err != nil {
+		t.Errorf("InitVHostDataFile failed: %s", err)
+	}
+}
+
+func TestInitialize(t *testing.T) {
+	listOfHostnames := map[string]func(*fiber.Ctx) error{
+		"localhost": mockMiddleware,
+	}
+
+	Initialize(listOfHostnames)
+
+	// Add your assertions here to verify the vhosts have been initialized correctly
+	// This will depend on how you can access and check the vhosts data
 }
 
 // Final cleanup after all tests have run
 func TestFinalCleanup(t *testing.T) {
 	os.Remove("test.gob")
 	os.Remove("test.txt")
+	os.Remove("testfile.bin")
 }

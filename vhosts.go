@@ -2,6 +2,7 @@ package vhosts
 
 import (
 	"encoding/gob"
+	"errors"
 	"os"
 	"sync"
 
@@ -102,6 +103,11 @@ func (v *Vhosts) Save(path string) error {
 // Load loads the vhosts list from a file at the given path
 func (v *Vhosts) Load(path string) error {
 
+	// Check if the file already exists, if it doesn't return an error
+	if !doesFileExist(path) {
+		return errors.New("file doesn't exist")
+	}
+
 	// Load the vhosts list from the file at the given path
 	vhosts, err := load(path)
 	if err != nil {
@@ -120,21 +126,27 @@ func (v *Vhosts) Load(path string) error {
 func save(path string, vhosts []Vhost) error {
 
 	// save using gob encoding
-
-	// Create the file at the given path
-	saveFile, err := createFile(path)
-	if err != nil {
-		return err
-	}
-	defer saveFile.Close()
-
-	// gob encode the vhosts list
-	encoder := gob.NewEncoder(saveFile)
-	err = encoder.Encode(vhosts)
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 
+	err = gobEncode(file, vhosts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+// gobEncode(f *os.File, vhosts []Vhost) error {
+func gobEncode(f *os.File, vhosts []Vhost) error {
+	encoder := gob.NewEncoder(f)
+	err := encoder.Encode(vhosts)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -144,7 +156,7 @@ func load(path string) ([]Vhost, error) {
 	// load using gob decoding
 
 	// Open the file at the given path
-	loadFile, err := openFile(path)
+	loadFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
@@ -161,32 +173,6 @@ func load(path string) ([]Vhost, error) {
 	return vhosts, nil
 }
 
-// utility functions
-
-// createFile creates a file at the given path
-func createFile(path string) (*os.File, error) {
-
-	// Create the file at the given path
-	file, err := os.Create(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return file, nil
-}
-
-// openFile opens a file at the given path
-func openFile(path string) (*os.File, error) {
-
-	// Open the file at the given path
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return file, nil
-}
-
 // vhosts is the vhosts list
 var vhosts *Vhosts
 
@@ -200,9 +186,9 @@ func InitVHostDataFile(path string) error {
 	return vhosts.Load(path)
 }
 
-// Initialize initializes the vhosts list with some vhosts defaults
-func Initialize(listOfHostnames []string) {
-	for _, hostname := range listOfHostnames {
-		vhosts.Add(NewVhost(hostname, "/", "", nil))
+// Initialize initializes the vhosts list with some vhosts defaults map of hostname to middleware ( map[string]func(*fiber.Ctx) error )
+func Initialize(listOfHostnames map[string]func(*fiber.Ctx) error) {
+	for hostname, middleware := range listOfHostnames {
+		vhosts.Add(NewVhost(hostname, "", "", middleware))
 	}
 }
