@@ -196,6 +196,13 @@ func init() {
 }
 
 // Init initializes the vhosts list from a file at the given path
-func Init(path string) error {
+func InitVHostDataFile(path string) error {
 	return vhosts.Load(path)
+}
+
+// Initialize initializes the vhosts list with some vhosts defaults
+func Initialize(listOfHostnames []string) {
+	for _, hostname := range listOfHostnames {
+		vhosts.Add(NewVhost(hostname, "/", "", nil))
+	}
 }
