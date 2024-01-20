@@ -160,11 +160,21 @@ func TestGetVhostnames(t *testing.T) {
 	}
 
 	expected := []string{"localhost", "example.com"}
-	result := v.GetVhostnames()
+	result := GetVhostnames(v)
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("GetVhostnames() = %v; want %v", result, expected)
 	}
+
+	// test getting vhostnames from no vhosts list passed in
+	expected = []string{"test.com"}
+	result = GetVhostnames()
+
+	// compare the result and expected values
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("GetVhostnames() = %v; want %v", result, expected) // print an error if they are not equal
+	}
+
 }
 
 func TestInitVHostDataFile(t *testing.T) {
