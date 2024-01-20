@@ -217,6 +217,6 @@ func Initialize(listOfHostnames map[string]map[string]interface{}) {
 
 	// Add the vhosts to the vhosts list
 	for hostname, middleware := range listOfHostnames {
-		vhosts.Add(NewVhost(hostname, "", "", middleware["handler"].(func(*fiber.Ctx) error), middleware["errorHandler"].(func(*fiber.Ctx, *error) error)))
+		vhosts.Add(NewVhost(hostname, "", "", middleware["handler"].(func(*fiber.Ctx) error), middleware["errorHandler"].(func(*fiber.Ctx, error) error)))
 	}
 }

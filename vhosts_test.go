@@ -147,7 +147,7 @@ func mockMiddleware(c *fiber.Ctx) error {
 	return c.SendString(answer)
 }
 
-func mockErrorHandler(c *fiber.Ctx, err *error) error {
+func mockErrorHandler(c *fiber.Ctx, err error) error {
 	return c.SendString("Custom Error Handler 🌼")
 }
 
@@ -198,7 +198,7 @@ func TestInitVHostDataFile(t *testing.T) {
 			Handler: func(c *fiber.Ctx) error {
 				return c.Status(200).SendString("Hello, World!")
 			},
-			ErrorHandler: func(c *fiber.Ctx, err *error) error {
+			ErrorHandler: func(c *fiber.Ctx, err error) error {
 				return c.Status(500).SendString("Internal Server Error")
 			},
 		},
@@ -207,7 +207,7 @@ func TestInitVHostDataFile(t *testing.T) {
 			Handler: func(c *fiber.Ctx) error {
 				return c.Status(200).SendString("Hello, World!")
 			},
-			ErrorHandler: func(c *fiber.Ctx, err *error) error {
+			ErrorHandler: func(c *fiber.Ctx, err error) error {
 				return c.Status(500).SendString("Internal Server Error")
 			},
 		},

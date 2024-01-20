@@ -6,7 +6,7 @@ import "github.com/gofiber/fiber/v2"
 type FiberHandler func(*fiber.Ctx) error
 
 // FiberErrorHandler is the error handler for the vhost middleware
-type FiberErrorHandler func(*fiber.Ctx, *error) error
+type FiberErrorHandler func(*fiber.Ctx, error) error
 
 // VhostsHandler is the handler for the vhosts middleware
 func VhostsHandler(c *fiber.Ctx) error {
