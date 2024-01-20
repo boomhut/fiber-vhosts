@@ -15,10 +15,9 @@ func TestVhostsHandler(t *testing.T) {
 
 	// Create a new vhost
 	vhost := Vhost{
-		Hostname: "test.com",
-		Middleware: func(c *fiber.Ctx) error {
-			return c.Status(200).SendString("Hello, World!")
-		},
+		Hostname:     "test.com",
+		Handler:      mockMiddleware,
+		ErrorHandler: mockErrorHandler,
 	}
 
 	// Create a new vhosts
@@ -38,6 +37,10 @@ func TestVhostsHandler(t *testing.T) {
 	assert.Equal(t, 200, resp.StatusCode, "Status code")
 	// check the response body
 	body, err := io.ReadAll(resp.Body)
+
+	// print the response body
+	t.Logf("Response Body: %s", string(body))
+
 	assert.Equal(t, nil, err, "ioutil.ReadAll(resp.Body)")
 	assert.Equal(t, "Hello, World!", string(body), "Response body")
 

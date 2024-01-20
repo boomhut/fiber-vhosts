@@ -10,10 +10,11 @@ import (
 )
 
 type Vhost struct {
-	Hostname   string          // hostname is the hostname of the vhost
-	Path       string          // path is the path of the vhost
-	WebsiteID  string          // websiteID is the websiteID of the vhost
-	Middleware FiberMiddleware // middleware is the middleware for the vhost
+	Hostname     string            // hostname is the hostname of the vhost
+	Path         string            // path is the path of the vhost
+	WebsiteID    string            // websiteID is the websiteID of the vhost
+	ErrorHandler FiberErrorHandler // errorHandler is the error handler for the vhost
+	Handler      FiberHandler      // middleware is the middleware for the vhost
 }
 
 // vhosts contains all the vhosts protected by mutex lock for concurrent access safety
@@ -24,15 +25,14 @@ type Vhosts struct {
 	mutex sync.RWMutex
 }
 
-type FiberMiddleware func(*fiber.Ctx) error
-
 // NewVhost returns a new vhost with the given hostname, path, websiteID and middleware
-func NewVhost(hostname, path, websiteID string, middleware FiberMiddleware) Vhost {
+func NewVhost(hostname, path, websiteID string, handler FiberHandler, errorHandler FiberErrorHandler) Vhost {
 	return Vhost{
-		Hostname:   hostname,
-		Path:       path,
-		WebsiteID:  websiteID,
-		Middleware: middleware,
+		Hostname:     hostname,
+		Path:         path,
+		WebsiteID:    websiteID,
+		Handler:      handler,
+		ErrorHandler: errorHandler,
 	}
 }
 
@@ -81,13 +81,24 @@ func (v *Vhosts) getVhosts() []Vhost {
 	return v.Vhosts
 }
 
+// getVhostnames returns the vhostnames list ( []string )
+func (v *Vhosts) GetVhostnames() []string {
+	v.mutex.RLock()
+	defer v.mutex.RUnlock()
+	var vhostnames []string
+	for _, vhost := range v.Vhosts {
+		vhostnames = append(vhostnames, vhost.Hostname)
+	}
+	return vhostnames
+}
+
 // get middleware returns the middleware for the vhost with the given hostname
-func (v *Vhosts) getMiddleware(hostname string) (func(*fiber.Ctx) error, bool) {
+func (v *Vhosts) getHandler(hostname string) (func(*fiber.Ctx) error, bool) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	for _, vhost := range v.Vhosts {
 		if vhost.Hostname == hostname {
-			return vhost.Middleware, true
+			return vhost.Handler, true
 		}
 	}
 	return nil, false
@@ -187,8 +198,10 @@ func InitVHostDataFile(path string) error {
 }
 
 // Initialize initializes the vhosts list with some vhosts defaults map of hostname to middleware ( map[string]func(*fiber.Ctx) error )
-func Initialize(listOfHostnames map[string]func(*fiber.Ctx) error) {
+func Initialize(listOfHostnames map[string]map[string]interface{}) {
+
+	// Add the vhosts to the vhosts list
 	for hostname, middleware := range listOfHostnames {
-		vhosts.Add(NewVhost(hostname, "", "", middleware))
+		vhosts.Add(NewVhost(hostname, "", "", middleware["handler"].(func(*fiber.Ctx) error), middleware["errorHandler"].(func(*fiber.Ctx, *error) error)))
 	}
 }

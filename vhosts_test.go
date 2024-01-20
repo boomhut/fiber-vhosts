@@ -2,6 +2,7 @@ package vhosts
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -75,16 +76,16 @@ func TestGetVhosts(t *testing.T) {
 
 func TestGetMiddleware(t *testing.T) {
 	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com", Middleware: func(c *fiber.Ctx) error { return nil }}
+	Vhost := Vhost{Hostname: "test.com", Handler: func(c *fiber.Ctx) error { return nil }}
 	v.Add(Vhost)
 
-	_, ok := v.getMiddleware("test.com")
+	_, ok := v.getHandler("test.com")
 	if !ok {
 		t.Errorf("Expected to get middleware for hostname 'test.com'")
 	}
 
 	// test getting middleware for a vhost that doesn't exist
-	_, ok = v.getMiddleware("test2.com")
+	_, ok = v.getHandler("test2.com")
 	if ok {
 		t.Errorf("Expected to not get middleware for hostname 'test2.com'")
 	}
@@ -111,7 +112,7 @@ func TestSaveAndLoad(t *testing.T) {
 	}
 
 	// add another Vhost to the list and save it again to test overwriting the file on disk
-	Vhost = NewVhost("test2.com", "", "", nil)
+	Vhost = NewVhost("test2.com", "", "", mockMiddleware, mockErrorHandler)
 	v.Add(Vhost)
 
 	err = v.Save("test.gob")
@@ -141,7 +142,29 @@ func TestLoadFileDoesNotExist(t *testing.T) {
 
 // Mock middleware function for testing
 func mockMiddleware(c *fiber.Ctx) error {
-	return c.SendString("Hello, World!")
+	answer := `Hello, World!`
+	// answer = fmt.Sprintf(answer, c.Locals("vhost.errorHandler").(FiberErrorHandler))
+	return c.SendString(answer)
+}
+
+func mockErrorHandler(c *fiber.Ctx, err *error) error {
+	return c.SendString("Custom Error Handler 🌼")
+}
+
+func TestGetVhostnames(t *testing.T) {
+	v := &Vhosts{
+		Vhosts: []Vhost{
+			{Hostname: "localhost"},
+			{Hostname: "example.com"},
+		},
+	}
+
+	expected := []string{"localhost", "example.com"}
+	result := v.GetVhostnames()
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("GetVhostnames() = %v; want %v", result, expected)
+	}
 }
 
 func TestInitVHostDataFile(t *testing.T) {
@@ -162,14 +185,20 @@ func TestInitVHostDataFile(t *testing.T) {
 	vhtest := []Vhost{
 		{
 			Hostname: "test.com",
-			Middleware: func(c *fiber.Ctx) error {
+			Handler: func(c *fiber.Ctx) error {
 				return c.Status(200).SendString("Hello, World!")
+			},
+			ErrorHandler: func(c *fiber.Ctx, err *error) error {
+				return c.Status(500).SendString("Internal Server Error")
 			},
 		},
 		{
 			Hostname: "test2.com",
-			Middleware: func(c *fiber.Ctx) error {
+			Handler: func(c *fiber.Ctx) error {
 				return c.Status(200).SendString("Hello, World!")
+			},
+			ErrorHandler: func(c *fiber.Ctx, err *error) error {
+				return c.Status(500).SendString("Internal Server Error")
 			},
 		},
 	}
@@ -191,10 +220,20 @@ func TestInitVHostDataFile(t *testing.T) {
 }
 
 func TestInitialize(t *testing.T) {
-	listOfHostnames := map[string]func(*fiber.Ctx) error{
-		"localhost": mockMiddleware,
+	listOfHostnames := map[string]map[string]interface{}{
+		"localhost": map[string]interface{}{
+			"handler":      mockMiddleware,
+			"errorHandler": mockErrorHandler,
+		},
+		"example.com": map[string]interface{}{
+			"handler":      mockMiddleware,
+			"errorHandler": mockErrorHandler,
+		},
+		"example.org": map[string]interface{}{
+			"handler":      mockMiddleware,
+			"errorHandler": mockErrorHandler,
+		},
 	}
-
 	Initialize(listOfHostnames)
 
 	// Add your assertions here to verify the vhosts have been initialized correctly
