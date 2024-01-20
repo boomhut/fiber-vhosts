@@ -82,11 +82,26 @@ func (v *Vhosts) getVhosts() []Vhost {
 }
 
 // getVhostnames returns the vhostnames list ( []string )
-func (v *Vhosts) GetVhostnames() []string {
-	v.mutex.RLock()
-	defer v.mutex.RUnlock()
+func GetVhostnames(v ...*Vhosts) []string {
+
+	vh := vhosts
+
+	// if no vhosts list is passed in, use the global vhosts list
+	if len(v) == 1 {
+		vh = v[0]
+	} else if len(v) < 1 {
+		vh = vhosts
+	}
+
+	// no vhosts list exists, return an empty list
+	if vh == nil {
+		return []string{}
+	}
+
+	vh.mutex.RLock()
+	defer vh.mutex.RUnlock()
 	var vhostnames []string
-	for _, vhost := range v.Vhosts {
+	for _, vhost := range vh.Vhosts {
 		vhostnames = append(vhostnames, vhost.Hostname)
 	}
 	return vhostnames
