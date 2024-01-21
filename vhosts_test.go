@@ -16,6 +16,11 @@ func TestAdd(t *testing.T) {
 	if len(v.Vhosts) != 1 {
 		t.Errorf("Expected length of Vhosts to be 1, got %d", len(v.Vhosts))
 	}
+
+	// verify the vhost was added to the list
+	if v.Vhosts[0].Hostname != "test.com" {
+		t.Errorf("Expected hostname to be 'test.com', got %s", v.Vhosts[0].Hostname)
+	}
 }
 
 func TestGet(t *testing.T) {

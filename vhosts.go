@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,12 +16,19 @@ type Vhost struct {
 	WebsiteID    string            // websiteID is the websiteID of the vhost
 	ErrorHandler FiberErrorHandler // errorHandler is the error handler for the vhost
 	Handler      FiberHandler      // middleware is the middleware for the vhost
+	LastModified int64             // lastModified is the last modified time of the vhost
 }
 
 // vhosts contains all the vhosts protected by mutex lock for concurrent access safety
 type Vhosts struct {
 	// vhosts is the list of vhosts
 	Vhosts []Vhost
+	// LastModified is the last modified time of the vhosts file
+	LastModified int64
+	// Version is the version of the vhosts file ( quick way to check if the vhosts file has changed )
+	Version int64
+	// Checksum is the checksum of the vhosts file ( quick way to check if the vhosts file has changed )
+	Checksum string
 	// mutex is the mutex lock for concurrent access safety
 	mutex sync.RWMutex
 }
@@ -33,6 +41,7 @@ func NewVhost(hostname, path, websiteID string, handler FiberHandler, errorHandl
 		WebsiteID:    websiteID,
 		Handler:      handler,
 		ErrorHandler: errorHandler,
+		LastModified: time.Now().Unix(),
 	}
 }
 
@@ -41,6 +50,9 @@ func (v *Vhosts) Add(vhost Vhost) {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	v.Vhosts = append(v.Vhosts, vhost)
+	// update the vhosts list version and last modified time
+	v.Version = +1
+	v.LastModified = time.Now().Unix()
 }
 
 // get returns the vhost with the given hostname
@@ -62,6 +74,9 @@ func (v *Vhosts) Remove(hostname string) {
 	for i, vhost := range v.Vhosts {
 		if vhost.Hostname == hostname {
 			v.Vhosts = append(v.Vhosts[:i], v.Vhosts[i+1:]...)
+			// update the vhosts list version and last modified time
+			v.Version = +1
+			v.LastModified = time.Now().Unix()
 			break
 		}
 	}
