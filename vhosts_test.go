@@ -2,262 +2,226 @@ package vhosts
 
 import (
 	"os"
-	"reflect"
 	"testing"
-
-	"github.com/gofiber/fiber/v2"
 )
 
-func TestAdd(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com"}
-	v.Add(Vhost)
-
-	if len(v.Vhosts) != 1 {
-		t.Errorf("Expected length of Vhosts to be 1, got %d", len(v.Vhosts))
-	}
-
-	// verify the vhost was added to the list
-	if v.Vhosts[0].Hostname != "test.com" {
-		t.Errorf("Expected hostname to be 'test.com', got %s", v.Vhosts[0].Hostname)
+func TestNewVhost(t *testing.T) {
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	if vhost.Hostname != "localhost" {
+		t.Errorf("Expected hostname to be 'localhost', got '%s'", vhost.Hostname)
 	}
 }
 
-func TestGet(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com"}
-	v.Add(Vhost)
-
-	result, ok := v.Get("test.com")
-	if !ok || result.Hostname != "test.com" {
-		t.Errorf("Expected to get Vhost with hostname 'test.com', got %v", result)
-	}
-
-	// test getting a vhost that doesn't exist
-	_, ok = v.Get("test2.com")
-	if ok {
-		t.Errorf("Expected to not get Vhost with hostname 'test2.com'")
-	}
-
-}
-
-func TestRemove(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com"}
-	v.Add(Vhost)
-
-	v.Remove("test.com")
-	if len(v.Vhosts) != 0 {
-		t.Errorf("Expected length of Vhosts to be 0, got %d", len(v.Vhosts))
-	}
-
-	// test removing a vhost that doesn't exist
-	v.Remove("test2.com")
-	if len(v.Vhosts) != 0 {
-		t.Errorf("Expected length of Vhosts to be 0, got %d", len(v.Vhosts))
-	}
-}
-
-func TestLength(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com"}
-	v.Add(Vhost)
-
-	if v.length() != 1 {
-		t.Errorf("Expected length of Vhosts to be 1, got %d", v.length())
-	}
-}
-
-func TestGetVhosts(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com"}
-	v.Add(Vhost)
-
-	if len(v.getVhosts()) != 1 {
-		t.Errorf("Expected length of Vhosts to be 1, got %d", len(v.getVhosts()))
-	}
-
-}
-
-func TestGetMiddleware(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com", Handler: func(c *fiber.Ctx) error { return nil }}
-	v.Add(Vhost)
-
-	_, ok := v.getHandler("test.com")
-	if !ok {
-		t.Errorf("Expected to get middleware for hostname 'test.com'")
-	}
-
-	// test getting middleware for a vhost that doesn't exist
-	_, ok = v.getHandler("test2.com")
-	if ok {
-		t.Errorf("Expected to not get middleware for hostname 'test2.com'")
-	}
-
-}
-
-func TestSaveAndLoad(t *testing.T) {
-	v := &Vhosts{}
-	Vhost := Vhost{Hostname: "test.com"}
-	v.Add(Vhost)
-
-	err := v.Save("test.gob")
+func TestVhosts_Add(t *testing.T) {
+	vhosts := &Vhosts{}
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	err := vhosts.Add(vhost)
 	if err != nil {
-		t.Errorf("Failed to save Vhosts: %v", err)
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(vhosts.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(vhosts.Vhosts))
 	}
 
-	err = v.Load("test.gob")
-	if err != nil {
-		t.Errorf("Failed to load Vhosts: %v", err)
-	}
-
-	if v.length() != 1 {
-		t.Errorf("Expected length of Vhosts to be 1, got %d", v.length())
-	}
-
-	// add another Vhost to the list and save it again to test overwriting the file on disk
-	Vhost = NewVhost("test2.com", "", "", mockMiddleware, mockErrorHandler)
-	v.Add(Vhost)
-
-	err = v.Save("test.gob")
-	if err != nil {
-		t.Errorf("Failed to save Vhosts: %v", err)
-	}
-
-	// test getting the vhost from the list
-	_, ok := v.Get("test2.com")
-	if !ok {
-		t.Errorf("Expected to get Vhost with hostname 'test2.com'")
-	}
-
-	// Cleanup
-	os.Remove("test.gob")
-}
-
-// load from a file that doesn't exist
-func TestLoadFileDoesNotExist(t *testing.T) {
-	v := &Vhosts{}
-	err := v.Load("testx.gob")
+	// add the same vhost again
+	err = vhosts.Add(vhost)
 	if err == nil {
-		t.Errorf("Expected to get error when loading from file that doesn't exist")
+		t.Errorf("Expected error, got nil")
+	}
+	if len(vhosts.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(vhosts.Vhosts))
 	}
 
 }
 
-// Mock middleware function for testing
-func mockMiddleware(c *fiber.Ctx) error {
-	answer := `Hello, World!`
-	// answer = fmt.Sprintf(answer, c.Locals("vhost.errorHandler").(FiberErrorHandler))
-	return c.SendString(answer)
+func TestVhosts_Get(t *testing.T) {
+	vhosts := &Vhosts{}
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost)
+	gotVhost, ok := vhosts.Get("localhost")
+	if !ok || gotVhost.Hostname != "localhost" {
+		t.Errorf("Expected to get vhost 'localhost', got '%s'", gotVhost.Hostname)
+	}
+
+	// TestGetVhostnames
+	vhostnames := GetVhostnames(vhosts)
+	if len(vhostnames) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(vhostnames))
+	}
+
+	// add a second vhost and test again
+	vhost2 := NewVhost("localhost2", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost2)
+	vhostnames = GetVhostnames(vhosts)
+	if len(vhostnames) != 2 {
+		t.Errorf("Expected 2 vhosts, got %d", len(vhostnames))
+	}
+
 }
 
-func mockErrorHandler(c *fiber.Ctx, err error) error {
-	return c.SendString("Custom Error Handler 🌼")
+func TestVhosts_Remove(t *testing.T) {
+	vhosts := &Vhosts{}
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost)
+	err := vhosts.Remove("localhost")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+	if len(vhosts.Vhosts) != 0 {
+		t.Errorf("Expected 0 vhosts, got %d", len(vhosts.Vhosts))
+	}
+
+	// remove a vhost that doesn't exist
+	err = vhosts.Remove("localhost")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+	if len(vhosts.Vhosts) != 0 {
+		t.Errorf("Expected 0 vhosts, got %d", len(vhosts.Vhosts))
+	}
+
 }
 
-func TestGetVhostnames(t *testing.T) {
-	v := &Vhosts{
-		Vhosts: []Vhost{
-			{Hostname: "localhost"},
-			{Hostname: "example.com"},
-		},
+func TestVhosts_NumberOfVhosts(t *testing.T) {
+	vhosts := &Vhosts{}
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost)
+	if vhosts.NumberOfVhosts() != 1 {
+		t.Errorf("Expected 1 vhost, got %d", vhosts.NumberOfVhosts())
+	}
+}
+
+func TestVhosts_getVhosts(t *testing.T) {
+	vhosts := &Vhosts{}
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost)
+	gotVhosts := vhosts.getVhosts()
+	if len(gotVhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(gotVhosts))
+	}
+}
+
+func TestVhosts_getHandler(t *testing.T) {
+	vhosts := &Vhosts{}
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost)
+	handler, ok := vhosts.getHandler("localhost")
+	if !ok || handler == nil {
+		t.Errorf("Expected to get handler for 'localhost', got nil")
+	}
+}
+
+func TestVhosts_Save(t *testing.T) {
+	vhosts := &Vhosts{}
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhost2 := NewVhost("secondhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost)
+	vhosts.Add(vhost2)
+	err := vhosts.Save("test.bin")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func TestVhosts_Load(t *testing.T) {
+	vhosts := &Vhosts{}
+	err := vhosts.Load("test.bin")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
 	}
 
-	expected := []string{"localhost", "example.com"}
-	result := GetVhostnames(v)
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("GetVhostnames() = %v; want %v", result, expected)
+	// Test that the vhosts list was loaded correctly
+	if len(vhosts.Vhosts) != 2 {
+		t.Errorf("Expected 2 vhosts, got %d", len(vhosts.Vhosts))
 	}
 
-	// test getting vhostnames from no vhosts list passed in
-	expected = []string{"test.com"}
-	result = GetVhostnames()
-
-	// compare the result and expected values
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("GetVhostnames() = %v; want %v", result, expected) // print an error if they are not equal
+	// Get the vhostnames
+	vhostnames := GetVhostnames(vhosts)
+	if len(vhostnames) != 2 {
+		t.Errorf("Expected 2 vhosts, got %d", len(vhostnames))
 	}
 
+	// Test that the vhosts list was loaded correctly
+	if vhostnames[0] != "localhost" {
+		t.Errorf("Expected hostname 'localhost', got '%s'", vhostnames[0])
+	}
+	if vhostnames[1] != "secondhost" {
+		t.Errorf("Expected hostname 'secondhost', got '%s'", vhostnames[1])
+	}
+}
+
+// Test load with file that doesn't exist
+func TestVhosts_Load_FileDoesntExist(t *testing.T) {
+	vhosts := &Vhosts{}
+	err := vhosts.Load("test2.bin")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+}
+
+// test load with altered checksum (should fail)
+func TestVhosts_Load_AlteredChecksum(t *testing.T) {
+
+	// modify the checksum in the file to make it invalid
+	// this should cause an error when loading the file
+
+	// load the file
+	ftm, err := os.OpenFile("test.bin", os.O_RDWR, 0644)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	defer ftm.Close()
+
+	// change the checksum 5th byte before the end of the file
+	// (checksum is 32 bytes long)
+	ftm.Seek(-5, 2)
+	ftm.Write([]byte("66"))
+
+	// close the file
+	ftm.Close()
+
+	vhosts := &Vhosts{}
+	err = vhosts.Load("test.bin")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
 }
 
 func TestInitVHostDataFile(t *testing.T) {
 
-	// create a file to test
-	file, err := os.Create("testfile.bin")
+	// call TestVhosts_Save to create the test.bin file
+	TestVhosts_Save(t)
+
+	err := InitVHostDataFile("test.bin")
 	if err != nil {
-		t.Errorf("Failed to create test file: %s", err)
-	}
-	file.Close()
-
-	// put some data in the file to test
-	file, err = os.OpenFile("testfile.bin", os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		t.Errorf("Failed to open test file: %s", err)
-	}
-
-	vhtest := []Vhost{
-		{
-			Hostname: "test.com",
-			Handler: func(c *fiber.Ctx) error {
-				return c.Status(200).SendString("Hello, World!")
-			},
-			ErrorHandler: func(c *fiber.Ctx, err error) error {
-				return c.Status(500).SendString("Internal Server Error")
-			},
-		},
-		{
-			Hostname: "test2.com",
-			Handler: func(c *fiber.Ctx) error {
-				return c.Status(200).SendString("Hello, World!")
-			},
-			ErrorHandler: func(c *fiber.Ctx, err error) error {
-				return c.Status(500).SendString("Internal Server Error")
-			},
-		},
-	}
-
-	err = gobEncode(file, vhtest)
-	if err != nil {
-		t.Errorf("Failed to encode test data: %s", err)
-	}
-
-	// close the file
-	file.Close()
-
-	// use the gob encoder to encode some data to the file
-
-	err = InitVHostDataFile("testfile.bin")
-	if err != nil {
-		t.Errorf("InitVHostDataFile failed: %s", err)
+		t.Errorf("Unexpected error: %v", err)
 	}
 }
 
+// Test Initialize (func Initialize(listOfHostnames map[string]map[string]interface{}))
 func TestInitialize(t *testing.T) {
-	listOfHostnames := map[string]map[string]interface{}{
-		"localhost": map[string]interface{}{
-			"handler":      mockMiddleware,
-			"errorHandler": mockErrorHandler,
-		},
-		"example.com": map[string]interface{}{
-			"handler":      mockMiddleware,
-			"errorHandler": mockErrorHandler,
-		},
-		"example.org": map[string]interface{}{
-			"handler":      mockMiddleware,
-			"errorHandler": mockErrorHandler,
-		},
-	}
+
+	// reset
+	vhostReset()
+
+	// create a map of hostname to middleware
+	listOfHostnames := make(map[string]map[string]interface{})
+	listOfHostnames["localhost"] = make(map[string]interface{})
+	listOfHostnames["localhost"]["handler"] = mockMiddleware
+	listOfHostnames["localhost"]["errorHandler"] = mockErrorHandler
+
+	// initialize the vhosts list
 	Initialize(listOfHostnames)
 
-	// Add your assertions here to verify the vhosts have been initialized correctly
-	// This will depend on how you can access and check the vhosts data
-}
+	// test that the vhosts list was initialized correctly
+	if len(vhosts.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(vhosts.Vhosts))
+	}
 
-// Final cleanup after all tests have run
-func TestFinalCleanup(t *testing.T) {
-	os.Remove("test.gob")
-	os.Remove("test.txt")
-	os.Remove("testfile.bin")
+	// test that the vhost was initialized correctly
+	if vhosts.Vhosts[0].Hostname != "localhost" {
+		t.Errorf("Expected hostname 'localhost', got '%s'", vhosts.Vhosts[0].Hostname)
+	}
+
 }

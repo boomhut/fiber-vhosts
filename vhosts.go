@@ -1,9 +1,11 @@
 package vhosts
 
 import (
+	"crypto/sha256"
 	"encoding/gob"
 	"errors"
 	"os"
+	"sort"
 	"sync"
 	"time"
 
@@ -46,13 +48,20 @@ func NewVhost(hostname, path, websiteID string, handler FiberHandler, errorHandl
 }
 
 // add adds a vhost to the vhosts list
-func (v *Vhosts) Add(vhost Vhost) {
+func (v *Vhosts) Add(vhost Vhost) error {
+	// lookup the vhost by hostname and return error if it already exists
+	_, ok := v.Get(vhost.Hostname)
+	if ok {
+		return errors.New("vhost already exists")
+	}
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	v.Vhosts = append(v.Vhosts, vhost)
 	// update the vhosts list version and last modified time
 	v.Version = +1
 	v.LastModified = time.Now().Unix()
+
+	return nil
 }
 
 // get returns the vhost with the given hostname
@@ -68,7 +77,7 @@ func (v *Vhosts) Get(hostname string) (Vhost, bool) {
 }
 
 // remove removes the vhost with the given hostname
-func (v *Vhosts) Remove(hostname string) {
+func (v *Vhosts) Remove(hostname string) error {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	for i, vhost := range v.Vhosts {
@@ -77,13 +86,14 @@ func (v *Vhosts) Remove(hostname string) {
 			// update the vhosts list version and last modified time
 			v.Version = +1
 			v.LastModified = time.Now().Unix()
-			break
+			return nil
 		}
 	}
+	return errors.New("vhost not found")
 }
 
-// length returns the length of the vhosts list
-func (v *Vhosts) length() int {
+// NumberOfVhosts returns the length of the vhosts list
+func (v *Vhosts) NumberOfVhosts() int {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	return len(v.Vhosts)
@@ -96,34 +106,21 @@ func (v *Vhosts) getVhosts() []Vhost {
 	return v.Vhosts
 }
 
-// getVhostnames returns the vhostnames list ( []string )
+// GetVhostnames returns the hostnames list ( []string )
 func GetVhostnames(v ...*Vhosts) []string {
-
-	vh := vhosts
-
-	// if no vhosts list is passed in, use the global vhosts list
-	if len(v) == 1 {
-		vh = v[0]
-	} else if len(v) < 1 {
-		vh = vhosts
+	var vh []Vhost
+	for _, vhost := range v {
+		vh = append(vh, vhost.getVhosts()...)
 	}
-
-	// no vhosts list exists, return an empty list
-	if vh == nil {
-		return []string{}
+	var hostnames []string
+	for _, vhost := range vh {
+		hostnames = append(hostnames, vhost.Hostname)
 	}
-
-	vh.mutex.RLock()
-	defer vh.mutex.RUnlock()
-	var vhostnames []string
-	for _, vhost := range vh.Vhosts {
-		vhostnames = append(vhostnames, vhost.Hostname)
-	}
-	return vhostnames
+	return hostnames
 }
 
-// get middleware returns the middleware for the vhost with the given hostname
-func (v *Vhosts) getHandler(hostname string) (func(*fiber.Ctx) error, bool) {
+// getHandler returns the handler for the given hostname
+func (v *Vhosts) getHandler(hostname string) (FiberHandler, bool) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
 	for _, vhost := range v.Vhosts {
@@ -134,84 +131,149 @@ func (v *Vhosts) getHandler(hostname string) (func(*fiber.Ctx) error, bool) {
 	return nil, false
 }
 
-// Save saves the vhosts list to a file at the given path
-func (v *Vhosts) Save(path string) error {
+// Save saves the vhosts to the given file
+func (v *Vhosts) Save(file string) error {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
-	return save(path, v.Vhosts)
+
+	// hash the vhosts list
+	hash, err := Hash(v.Vhosts)
+	if err != nil {
+		return err
+	}
+
+	// update the vhosts list checksum
+	v.Checksum = hash
+
+	return save(file, v)
 }
 
-// Load loads the vhosts list from a file at the given path
-func (v *Vhosts) Load(path string) error {
+// save saves the vhosts to the given file
+func save(file string, v *Vhosts) error {
+	return EncodeAsGob(file, v)
+}
 
-	// Check if the file already exists, if it doesn't return an error
-	if !doesFileExist(path) {
+// EncodeAsGob encodes the given vhosts as gob and saves it to the given file
+func EncodeAsGob(file string, v *Vhosts) error {
+
+	// Open the file at the given path
+	saveFile, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer saveFile.Close()
+
+	encoder := gob.NewEncoder(saveFile)
+	err = encoder.Encode(v)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Load loads the vhosts from the given file
+func (v *Vhosts) Load(file string) error {
+
+	// does the file we're trying to load exist?
+	if !doesFileExist(file) {
 		return errors.New("file doesn't exist")
 	}
 
-	// Load the vhosts list from the file at the given path
-	vhosts, err := load(path)
+	// load the vhosts from the given file
+	err := load(file, v)
 	if err != nil {
 		return err
 	}
 
-	// Set the vhosts list
-	v.mutex.Lock()
-	defer v.mutex.Unlock()
-	v.Vhosts = vhosts
+	// // set the vhosts
+	// v.mutex.Lock()
+	// defer v.mutex.Unlock()
+	// v.Vhosts = vhosts
 
 	return nil
 }
 
-// save saves the vhosts list to a file at the given path
-func save(path string, vhosts []Vhost) error {
-
-	// save using gob encoding
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-
-	err = gobEncode(file, vhosts)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
-}
-
-// gobEncode(f *os.File, vhosts []Vhost) error {
-func gobEncode(f *os.File, vhosts []Vhost) error {
-	encoder := gob.NewEncoder(f)
-	err := encoder.Encode(vhosts)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// load loads the vhosts list from a file at the given path
-func load(path string) ([]Vhost, error) {
-
-	// load using gob decoding
+// load loads the vhosts from the given file into the pointer to vhosts
+func load(file string, vhPtr *Vhosts) error {
 
 	// Open the file at the given path
-	loadFile, err := os.OpenFile(path, os.O_RDONLY, 0644)
+	loadFile, err := os.OpenFile(file, os.O_RDONLY, 0644)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer loadFile.Close()
 
 	// gob decode the vhosts list
-	var vhosts []Vhost
 	decoder := gob.NewDecoder(loadFile)
-	err = decoder.Decode(&vhosts)
+	err = decoder.Decode(vhPtr)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return vhosts, nil
+	// verify the vhosts list checksum
+	hash, err := Hash(vhPtr.Vhosts)
+	if err != nil {
+		return err
+	}
+	if hash != vhPtr.Checksum {
+		return errors.New("vhosts list checksum doesn't match")
+	}
+
+	return nil
+
+}
+
+// Hash returns the hash of the given vhosts list
+func Hash(vhosts []Vhost) (string, error) {
+
+	var hashes []string
+
+	// hash the vhosts list
+	for _, vhost := range vhosts {
+
+		var vhostHash string
+		// create a new sha256 hash
+		h := sha256.New()
+		// hash the vhost hostname
+		_, err := h.Write([]byte(vhost.Hostname))
+		if err != nil {
+			return "", err
+		}
+		vhostHash = string(h.Sum(nil))
+
+		// hash the websiteID
+		_, err = h.Write([]byte(vhost.WebsiteID))
+		if err != nil {
+			return "", err
+		}
+		websiteIdHash := string(h.Sum(nil))
+
+		// combine the vhost hash and the websiteID hash
+		vhostHash = vhostHash + websiteIdHash
+
+		// add the vhost hash to the hashes list
+		hashes = append(hashes, vhostHash)
+
+	}
+
+	// sort the hashes list alphabetically ( so that the order of the vhosts doesn't matter )
+	sort.Strings(hashes)
+
+	// create a new sha256 hash
+	h := sha256.New()
+
+	// combine all the hashes into one string and hash it
+	var combinedString string
+	for _, hash := range hashes {
+		combinedString = combinedString + hash
+	}
+	_, err := h.Write([]byte(combinedString))
+	if err != nil {
+		return "", err
+	}
+
+	// return the hash as a string
+	return string(h.Sum(nil)), nil
+
 }
 
 // vhosts is the vhosts list
@@ -234,4 +296,19 @@ func Initialize(listOfHostnames map[string]map[string]interface{}) {
 	for hostname, middleware := range listOfHostnames {
 		vhosts.Add(NewVhost(hostname, "", "", middleware["handler"].(func(*fiber.Ctx) error), middleware["errorHandler"].(func(*fiber.Ctx, error) error)))
 	}
+}
+
+// utility functions
+// vhostReset resets the vhosts list
+func vhostReset() {
+	vhosts = &Vhosts{}
+}
+
+// doesFileExist checks if a file exists at the given path
+func doesFileExist(path string) bool {
+	// return true if the file already exists, if not return false
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
