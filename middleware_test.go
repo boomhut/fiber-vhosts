@@ -53,3 +53,11 @@ func TestVhostsHandler(t *testing.T) {
 	assert.Equal(t, 404, resp.StatusCode, "Status code")
 
 }
+
+func mockMiddleware(c *fiber.Ctx) error {
+	return c.SendString("Hello, World!")
+}
+
+func mockErrorHandler(c *fiber.Ctx, err error) error {
+	return c.SendStatus(404)
+}
