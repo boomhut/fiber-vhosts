@@ -225,3 +225,8 @@ func TestInitialize(t *testing.T) {
 	}
 
 }
+
+// Clean up
+func TestVhosts_CleanUp(t *testing.T) {
+	os.Remove("test.bin")
+}
