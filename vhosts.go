@@ -475,6 +475,23 @@ func (v *Vhosts) SetHandler(hostname string, handler FiberHandler) error {
 	return nil
 }
 
+// SetHandlerByTag sets the handler for the given hostname
+func (v *Vhosts) SetHandlerByTag(hostname, tag string) error {
+	vhost, ok := v.Get(hostname)
+	if !ok {
+		return errors.New("vhost not found")
+	}
+	// lock the vhosts list
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
+	handler, ok := v.GetHandler(tag)
+	if !ok {
+		return errors.New("handler not found")
+	}
+	vhost.Handler = handler
+	return nil
+}
+
 // SetErrorHandler sets the error handler for the given hostname
 func (v *Vhosts) SetErrorHandler(hostname string, errorHandler FiberErrorHandler) error {
 	vhost, ok := v.Get(hostname)
@@ -485,6 +502,23 @@ func (v *Vhosts) SetErrorHandler(hostname string, errorHandler FiberErrorHandler
 	// lock the vhosts list
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
+	vhost.ErrorHandler = errorHandler
+	return nil
+}
+
+// SetErrorHandlerByTag sets the error handler for the given hostname
+func (v *Vhosts) SetErrorHandlerByTag(hostname, tag string) error {
+	vhost, ok := v.Get(hostname)
+	if !ok {
+		return errors.New("vhost not found")
+	}
+	// lock the vhosts list
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
+	errorHandler, ok := v.GetErrorHandler(tag)
+	if !ok {
+		return errors.New("error handler not found")
+	}
 	vhost.ErrorHandler = errorHandler
 	return nil
 }
