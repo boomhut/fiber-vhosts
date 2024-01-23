@@ -340,8 +340,8 @@ func SetHandler(hostname string, handler FiberHandler) error {
 }
 
 // SetErrorHandler sets the error handler for the given hostname
-func SetErrorHandler(hostname string, errorHandler FiberErrorHandler) error {
-	vhost, ok := Vhs.Get(hostname)
+func (v *Vhosts) SetErrorHandler(hostname string, errorHandler FiberErrorHandler) error {
+	vhost, ok := v.Get(hostname)
 	if !ok {
 		return errors.New("vhost not found")
 	}
