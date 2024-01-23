@@ -5,6 +5,10 @@ import (
 	"github.com/gofiber/fiber/v2/log"
 )
 
+func init() {
+	Vhs.Load("./data/vh.swdata")
+}
+
 // FiberHandler is the handler for the vhost middleware
 type FiberHandler func(*fiber.Ctx) error
 
@@ -15,6 +19,9 @@ type FiberErrorHandler func(*fiber.Ctx, error) error
 func VhostsHandler(c *fiber.Ctx) error {
 	// debug("vhosts middleware")
 	log.Debugf("vhosts middleware %s", c.Hostname())
+
+	// log the number of vhosts
+	log.Debugf("vhosts count %d", len(Vhs.Vhosts))
 
 	// Get the hostname from the request
 	hostname := c.Hostname()
