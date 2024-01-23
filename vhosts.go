@@ -286,16 +286,16 @@ func Hash(vhosts []Vhost) (string, error) {
 }
 
 // vhosts is the vhosts list
-var vhosts *Vhosts
+var Vhs *Vhosts
 
 // init initializes the vhosts list
 func init() {
-	vhosts = &Vhosts{}
+	Vhs = &Vhosts{}
 }
 
 // Init initializes the vhosts list from a file at the given path
 func InitVHostDataFile(path string) error {
-	return vhosts.Load(path)
+	return Vhs.Load(path)
 }
 
 // Initialize initializes the vhosts list with some vhosts defaults map of hostname to middleware ( map[string]func(*fiber.Ctx) error )
@@ -303,14 +303,14 @@ func Initialize(listOfHostnames map[string]map[string]interface{}) {
 
 	// Add the vhosts to the vhosts list
 	for hostname, middleware := range listOfHostnames {
-		vhosts.Add(NewVhost(hostname, "", "", middleware["handler"].(func(*fiber.Ctx) error), middleware["errorHandler"].(func(*fiber.Ctx, error) error)))
+		Vhs.Add(NewVhost(hostname, "", "", middleware["handler"].(func(*fiber.Ctx) error), middleware["errorHandler"].(func(*fiber.Ctx, error) error)))
 	}
 }
 
 // utility functions
 // vhostReset resets the vhosts list
 func vhostReset() {
-	vhosts = &Vhosts{}
+	Vhs = &Vhosts{}
 }
 
 // doesFileExist checks if a file exists at the given path
@@ -325,5 +325,5 @@ func doesFileExist(path string) bool {
 // GetVhosts returns the vhosts
 func GetVhosts() *Vhosts {
 
-	return vhosts
+	return Vhs
 }

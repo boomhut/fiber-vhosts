@@ -20,7 +20,7 @@ func VhostsHandler(c *fiber.Ctx) error {
 	hostname := c.Hostname()
 
 	// Get the vhost with the given hostname
-	vhost, ok := vhosts.Get(hostname)
+	vhost, ok := Vhs.Get(hostname)
 	if !ok {
 		log.Debugf("vhost not found for hostname %s", hostname)
 		// Return a 404 if the vhost doesn't exist

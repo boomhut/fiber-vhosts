@@ -215,13 +215,13 @@ func TestInitialize(t *testing.T) {
 	Initialize(listOfHostnames)
 
 	// test that the vhosts list was initialized correctly
-	if len(vhosts.Vhosts) != 1 {
-		t.Errorf("Expected 1 vhost, got %d", len(vhosts.Vhosts))
+	if len(Vhs.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(Vhs.Vhosts))
 	}
 
 	// test that the vhost was initialized correctly
-	if vhosts.Vhosts[0].Hostname != "localhost" {
-		t.Errorf("Expected hostname 'localhost', got '%s'", vhosts.Vhosts[0].Hostname)
+	if Vhs.Vhosts[0].Hostname != "localhost" {
+		t.Errorf("Expected hostname 'localhost', got '%s'", Vhs.Vhosts[0].Hostname)
 	}
 
 }

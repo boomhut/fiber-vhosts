@@ -21,8 +21,8 @@ func TestVhostsHandler(t *testing.T) {
 	}
 
 	// Create a new vhosts
-	vhosts = &Vhosts{}
-	vhosts.Add(vhost)
+	Vhs = &Vhosts{}
+	Vhs.Add(vhost)
 
 	// Register the vhosts middleware
 	app.Use(VhostsHandler)
