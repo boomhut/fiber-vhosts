@@ -471,7 +471,9 @@ func (v *Vhosts) SetHandler(hostname string, handler FiberHandler) error {
 	// lock the vhosts list
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
+	// set the handler
 	vhost.Handler = handler
+
 	return nil
 }
 
@@ -489,6 +491,8 @@ func (v *Vhosts) SetHandlerByTag(hostname, tag string) error {
 		return errors.New("handler not found")
 	}
 	vhost.Handler = handler
+	// set the path to the handler tag
+	vhost.Path = tag
 	return nil
 }
 
@@ -503,6 +507,7 @@ func (v *Vhosts) SetErrorHandler(hostname string, errorHandler FiberErrorHandler
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	vhost.ErrorHandler = errorHandler
+
 	return nil
 }
 
@@ -520,5 +525,7 @@ func (v *Vhosts) SetErrorHandlerByTag(hostname, tag string) error {
 		return errors.New("error handler not found")
 	}
 	vhost.ErrorHandler = errorHandler
+	// set the path to the error handler tag
+	vhost.Path = tag
 	return nil
 }
