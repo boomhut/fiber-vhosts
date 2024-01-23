@@ -36,9 +36,9 @@ type Vhosts struct {
 	// Checksum is the checksum of the vhosts file ( quick way to check if the vhosts file has changed )
 	Checksum string
 	// Handlers is the list of handlers for the vhosts
-	Handlers map[string]FiberHandler
+	handlers map[string]FiberHandler
 	// ErrorHandlers is the list of error handlers for the vhosts
-	ErrorHandlers map[string]FiberErrorHandler
+	errorHandlers map[string]FiberErrorHandler
 	// mutex is the mutex lock for concurrent access safety
 	mutex sync.RWMutex
 }
@@ -118,7 +118,7 @@ func (v *Vhosts) getVhosts() []Vhost {
 func (v *Vhosts) AddHandler(handlerTag string, handler FiberHandler) error {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
-	v.Handlers[handlerTag] = handler
+	v.handlers[handlerTag] = handler
 	return nil
 }
 
@@ -126,7 +126,7 @@ func (v *Vhosts) AddHandler(handlerTag string, handler FiberHandler) error {
 func (v *Vhosts) GetHandler(handlerTag string) (FiberHandler, bool) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
-	handler, ok := v.Handlers[handlerTag]
+	handler, ok := v.handlers[handlerTag]
 	return handler, ok
 }
 
@@ -134,7 +134,7 @@ func (v *Vhosts) GetHandler(handlerTag string) (FiberHandler, bool) {
 func (v *Vhosts) AddErrorHandler(errorHandlerTag string, errorHandler FiberErrorHandler) error {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
-	v.ErrorHandlers[errorHandlerTag] = errorHandler
+	v.errorHandlers[errorHandlerTag] = errorHandler
 	return nil
 }
 
@@ -142,7 +142,7 @@ func (v *Vhosts) AddErrorHandler(errorHandlerTag string, errorHandler FiberError
 func (v *Vhosts) GetErrorHandler(errorHandlerTag string) (FiberErrorHandler, bool) {
 	v.mutex.RLock()
 	defer v.mutex.RUnlock()
-	errorHandler, ok := v.ErrorHandlers[errorHandlerTag]
+	errorHandler, ok := v.errorHandlers[errorHandlerTag]
 	return errorHandler, ok
 }
 
@@ -151,12 +151,12 @@ func (v *Vhosts) RemoveHandler(handlerTag string) error {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	// return error if the handler doesn't exist
-	_, ok := v.Handlers[handlerTag]
+	_, ok := v.handlers[handlerTag]
 	if !ok {
 		return errors.New("handler doesn't exist")
 	}
 
-	delete(v.Handlers, handlerTag)
+	delete(v.handlers, handlerTag)
 	return nil
 }
 
@@ -165,17 +165,17 @@ func (v *Vhosts) RemoveErrorHandler(errorHandlerTag string) error {
 	v.mutex.Lock()
 	defer v.mutex.Unlock()
 	// return error if the error handler doesn't exist
-	_, ok := v.ErrorHandlers[errorHandlerTag]
+	_, ok := v.errorHandlers[errorHandlerTag]
 	if !ok {
 		return errors.New("error handler doesn't exist")
 	}
 
-	delete(v.ErrorHandlers, errorHandlerTag)
+	delete(v.errorHandlers, errorHandlerTag)
 	return nil
 }
 
 // ReloadHandlers reloads the handlers for each vhost based on the path var. It sets a default handler for each vhost if the path var is empty
-func (v *Vhosts) ReloadHandlers(handlers map[string]FiberHandler) error {
+func (v *Vhosts) ReloadHandlers() error {
 
 	// default handler
 	defaultHandler := func(c *fiber.Ctx) error {
@@ -202,11 +202,22 @@ func (v *Vhosts) ReloadHandlers(handlers map[string]FiberHandler) error {
 		}
 
 		// loop through the handlers list
-		for handlerTag, handler := range handlers {
+		for handlerTag, handler := range v.handlers {
 
 			// if the handler tag matches the vhost path
 			if handlerTag == vhost.Path {
 				vhost.Handler = handler
+				v.Vhosts[i] = vhost
+				break
+			}
+		}
+
+		// loop through the error handlers list
+		for errorHandlerTag, errorHandler := range v.errorHandlers {
+
+			// if the error handler tag matches the vhost path
+			if errorHandlerTag == vhost.Path {
+				vhost.ErrorHandler = errorHandler
 				v.Vhosts[i] = vhost
 				break
 			}
