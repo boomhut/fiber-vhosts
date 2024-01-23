@@ -25,7 +25,7 @@ func TestVhostsHandler(t *testing.T) {
 	Vhs.Add(vhost)
 
 	// Register the vhosts middleware
-	app.Use(VhostsHandler)
+	app.Use(XVhost(Vhs))
 
 	// Create a new request
 	req := httptest.NewRequest("GET", "http://test.com/", nil)

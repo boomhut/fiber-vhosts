@@ -335,6 +335,9 @@ func (v *Vhosts) SetHandler(hostname string, handler FiberHandler) error {
 	if !ok {
 		return errors.New("vhost not found")
 	}
+	// lock the vhosts list
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
 	vhost.Handler = handler
 	return nil
 }
@@ -345,6 +348,10 @@ func (v *Vhosts) SetErrorHandler(hostname string, errorHandler FiberErrorHandler
 	if !ok {
 		return errors.New("vhost not found")
 	}
+
+	// lock the vhosts list
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
 	vhost.ErrorHandler = errorHandler
 	return nil
 }
