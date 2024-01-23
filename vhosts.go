@@ -119,6 +119,15 @@ func GetVhostnames(v ...*Vhosts) []string {
 	return hostnames
 }
 
+// GetVhostnames returns the hostnames list ( []string )
+func (v *Vhosts) GetVhostnames() []string {
+	var hostnames []string
+	for _, vhost := range v.Vhosts {
+		hostnames = append(hostnames, vhost.Hostname)
+	}
+	return hostnames
+}
+
 // getHandler returns the handler for the given hostname
 func (v *Vhosts) getHandler(hostname string) (FiberHandler, bool) {
 	v.mutex.RLock()
