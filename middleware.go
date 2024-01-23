@@ -13,7 +13,7 @@ type FiberErrorHandler func(*fiber.Ctx, error) error
 
 // VhostsHandler is the handler for the vhosts middleware
 
-func XVhost(vh *Vhosts) fiber.Handler {
+func XVhost(vh *Vhosts) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// debug("vhosts middleware")
 		log.Debugf("vhosts middleware %s", c.Hostname())
