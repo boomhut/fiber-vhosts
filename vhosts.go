@@ -432,7 +432,10 @@ func Initialize(listOfHostnames map[string]map[string]interface{}) {
 // utility functions
 // vhostReset resets the vhosts list
 func vhostReset() {
-	Vhs = &Vhosts{}
+	Vhs = &Vhosts{
+		handlers:      make(map[string]FiberHandler),
+		errorHandlers: make(map[string]FiberErrorHandler),
+	}
 }
 
 // doesFileExist checks if a file exists at the given path
