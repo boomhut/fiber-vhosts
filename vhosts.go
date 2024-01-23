@@ -312,3 +312,9 @@ func doesFileExist(path string) bool {
 	}
 	return true
 }
+
+// GetVhosts returns the vhosts
+func GetVhosts() *Vhosts {
+
+	return vhosts
+}
