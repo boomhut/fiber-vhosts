@@ -12,6 +12,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// vhosts is the vhosts list
+var Vhs *Vhosts
+
+// Vhost is a virtual host
 type Vhost struct {
 	Hostname     string            // hostname is the hostname of the vhost
 	Path         string            // path is the path of the vhost
@@ -284,9 +288,6 @@ func Hash(vhosts []Vhost) (string, error) {
 	return string(h.Sum(nil)), nil
 
 }
-
-// vhosts is the vhosts list
-var Vhs *Vhosts
 
 // init initializes the vhosts list
 func init() {
