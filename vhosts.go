@@ -407,13 +407,13 @@ func Hash(vhosts []Vhost) (string, error) {
 
 }
 
-// init initializes the vhosts list
-func init() {
-	Vhs = &Vhosts{
-		handlers:      make(map[string]FiberHandler),
-		errorHandlers: make(map[string]FiberErrorHandler),
-	}
-}
+// // init initializes the vhosts list
+// func init() {
+// 	Vhs = &Vhosts{
+// 		handlers:      make(map[string]FiberHandler),
+// 		errorHandlers: make(map[string]FiberErrorHandler),
+// 	}
+// }
 
 // Init initializes the vhosts list from a file at the given path
 func InitVHostDataFile(path string) error {
