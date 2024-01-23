@@ -16,10 +16,10 @@ type FiberErrorHandler func(*fiber.Ctx, error) error
 func XVhost(vh *Vhosts) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		// debug("vhosts middleware")
-		log.Debugf("vhosts middleware %s", c.Hostname())
+		// log.Debugf("vhosts middleware %s", c.Hostname())
 
 		// log the number of vhosts
-		log.Debugf("vhosts count %d", len(vh.Vhosts))
+		// log.Debugf("vhosts count %d", len(vh.Vhosts))
 
 		// Get the hostname from the request
 		hostname := c.Hostname()
@@ -32,12 +32,12 @@ func XVhost(vh *Vhosts) func(c *fiber.Ctx) error {
 			return c.SendStatus(404)
 		}
 
-		log.Debugf("vhost found for hostname %s", hostname)
-		log.Debugf("vhost websiteID %s", fVhost.WebsiteID)
-		log.Debugf("vhost path %s", fVhost.Path)
-		log.Debugf("vhost lastModified %d", fVhost.LastModified)
-		log.Debugf("vhost errorHandler %v", fVhost.ErrorHandler)
-		log.Debugf("vhost handler %v", fVhost.Handler)
+		// log.Debugf("vhost found for hostname %s", hostname)
+		// log.Debugf("vhost websiteID %s", fVhost.WebsiteID)
+		// log.Debugf("vhost path %s", fVhost.Path)
+		// log.Debugf("vhost lastModified %d", fVhost.LastModified)
+		// log.Debugf("vhost errorHandler %v", fVhost.ErrorHandler)
+		// log.Debugf("vhost handler %v", fVhost.Handler)
 
 		// Set some values on the context
 		c.Locals("vhost.hostname", hostname)                // Hostname
