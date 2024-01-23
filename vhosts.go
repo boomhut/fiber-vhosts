@@ -429,6 +429,15 @@ func Initialize(listOfHostnames map[string]map[string]interface{}) {
 	}
 }
 
+func (v *Vhosts) InitializeHandlerSpace() {
+	v.mutex.Lock()
+	defer v.mutex.Unlock()
+
+	v.handlers = make(map[string]FiberHandler)
+	v.errorHandlers = make(map[string]FiberErrorHandler)
+
+}
+
 // utility functions
 // vhostReset resets the vhosts list
 func vhostReset() {
