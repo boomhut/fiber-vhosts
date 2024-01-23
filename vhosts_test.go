@@ -34,6 +34,17 @@ func TestVhosts_Add(t *testing.T) {
 
 }
 
+// Test GetVhosts() *Vhosts
+func TestGetVhosts(t *testing.T) {
+	vhosts := Vhs
+	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
+	vhosts.Add(vhost)
+	gotVhosts := GetVhosts()
+	if len(gotVhosts.Vhosts) != 2 {
+		t.Errorf("Expected 1 vhost, got %d", len(gotVhosts.Vhosts))
+	}
+}
+
 func TestVhosts_Get(t *testing.T) {
 	vhosts := &Vhosts{}
 	vhost := NewVhost("localhost", "/", "1", mockMiddleware, mockErrorHandler)
@@ -222,6 +233,146 @@ func TestInitialize(t *testing.T) {
 	// test that the vhost was initialized correctly
 	if Vhs.Vhosts[0].Hostname != "localhost" {
 		t.Errorf("Expected hostname 'localhost', got '%s'", Vhs.Vhosts[0].Hostname)
+	}
+
+}
+
+// Test SetHandler (func SetHandler(hostname string, handler FiberHandler))
+func TestSetHandler(t *testing.T) {
+
+	// reset
+	vhostReset()
+
+	// create a map of hostname to middleware
+	listOfHostnames := make(map[string]map[string]interface{})
+	listOfHostnames["localhost"] = make(map[string]interface{})
+	listOfHostnames["localhost"]["handler"] = mockMiddleware
+	listOfHostnames["localhost"]["errorHandler"] = mockErrorHandler
+
+	// initialize the vhosts list
+	Initialize(listOfHostnames)
+
+	// test that the vhosts list was initialized correctly
+	if len(Vhs.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(Vhs.Vhosts))
+	}
+
+	// test that the vhost was initialized correctly
+	if Vhs.Vhosts[0].Hostname != "localhost" {
+		t.Errorf("Expected hostname 'localhost', got '%s'", Vhs.Vhosts[0].Hostname)
+	}
+
+	// set the handler for localhost
+	Vhs.SetHandler("localhost", mockMiddleware)
+
+	// test that the handler was set correctly
+	if Vhs.Vhosts[0].Handler == nil {
+		t.Errorf("Expected handler to be set, got nil")
+	}
+
+}
+
+// Test SetErrorHandler (func SetErrorHandler(hostname string, errorHandler FiberErrorHandler))
+func TestSetErrorHandler(t *testing.T) {
+
+	// reset
+	vhostReset()
+
+	// create a map of hostname to middleware
+	listOfHostnames := make(map[string]map[string]interface{})
+	listOfHostnames["localhost"] = make(map[string]interface{})
+	listOfHostnames["localhost"]["handler"] = mockMiddleware
+	listOfHostnames["localhost"]["errorHandler"] = mockErrorHandler
+
+	// initialize the vhosts list
+	Initialize(listOfHostnames)
+
+	// test that the vhosts list was initialized correctly
+	if len(Vhs.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(Vhs.Vhosts))
+	}
+
+	// test that the vhost was initialized correctly
+	if Vhs.Vhosts[0].Hostname != "localhost" {
+		t.Errorf("Expected hostname 'localhost', got '%s'", Vhs.Vhosts[0].Hostname)
+	}
+
+	// set the error handler for localhost
+	Vhs.SetErrorHandler("localhost", mockErrorHandler)
+
+	// test that the error handler was set correctly
+	if Vhs.Vhosts[0].ErrorHandler == nil {
+		t.Errorf("Expected error handler to be set, got nil")
+	}
+
+}
+
+// Set handler for vhost that doesn't exist
+func TestSetHandler_VhostDoesntExist(t *testing.T) {
+
+	// reset
+	vhostReset()
+
+	// create a map of hostname to middleware
+	listOfHostnames := make(map[string]map[string]interface{})
+	listOfHostnames["localhost"] = make(map[string]interface{})
+	listOfHostnames["localhost"]["handler"] = mockMiddleware
+	listOfHostnames["localhost"]["errorHandler"] = mockErrorHandler
+
+	// initialize the vhosts list
+	Initialize(listOfHostnames)
+
+	// test that the vhosts list was initialized correctly
+	if len(Vhs.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(Vhs.Vhosts))
+	}
+
+	// test that the vhost was initialized correctly
+	if Vhs.Vhosts[0].Hostname != "localhost" {
+		t.Errorf("Expected hostname 'localhost', got '%s'", Vhs.Vhosts[0].Hostname)
+	}
+
+	// set the handler for localhost
+	err := Vhs.SetHandler("localhost2", mockMiddleware)
+
+	// test that the error was returned
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+
+}
+
+// Set error handler for vhost that doesn't exist
+func TestSetErrorHandler_VhostDoesntExist(t *testing.T) {
+
+	// reset
+	vhostReset()
+
+	// create a map of hostname to middleware
+	listOfHostnames := make(map[string]map[string]interface{})
+	listOfHostnames["localhost"] = make(map[string]interface{})
+	listOfHostnames["localhost"]["handler"] = mockMiddleware
+	listOfHostnames["localhost"]["errorHandler"] = mockErrorHandler
+
+	// initialize the vhosts list
+	Initialize(listOfHostnames)
+
+	// test that the vhosts list was initialized correctly
+	if len(Vhs.Vhosts) != 1 {
+		t.Errorf("Expected 1 vhost, got %d", len(Vhs.Vhosts))
+	}
+
+	// test that the vhost was initialized correctly
+	if Vhs.Vhosts[0].Hostname != "localhost" {
+		t.Errorf("Expected hostname 'localhost', got '%s'", Vhs.Vhosts[0].Hostname)
+	}
+
+	// set the error handler for localhost
+	err := Vhs.SetErrorHandler("localhost2", mockErrorHandler)
+
+	// test that the error was returned
+	if err == nil {
+		t.Errorf("Expected error, got nil")
 	}
 
 }
