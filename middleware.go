@@ -25,7 +25,7 @@ func XVhost(vh *Vhosts) fiber.Handler {
 		hostname := c.Hostname()
 
 		// Get the vhost with the given hostname
-		vhost, ok := vh.Get(hostname)
+		fVhost, ok := vh.Get(hostname)
 		if !ok {
 			log.Debugf("vhost not found for hostname %s", hostname)
 			// Return a 404 if the vhost doesn't exist
@@ -33,18 +33,18 @@ func XVhost(vh *Vhosts) fiber.Handler {
 		}
 
 		log.Debugf("vhost found for hostname %s", hostname)
-		log.Debugf("vhost websiteID %s", vhost.WebsiteID)
-		log.Debugf("vhost path %s", vhost.Path)
-		log.Debugf("vhost lastModified %d", vhost.LastModified)
-		log.Debugf("vhost errorHandler %v", vhost.ErrorHandler)
-		log.Debugf("vhost handler %v", vhost.Handler)
+		log.Debugf("vhost websiteID %s", fVhost.WebsiteID)
+		log.Debugf("vhost path %s", fVhost.Path)
+		log.Debugf("vhost lastModified %d", fVhost.LastModified)
+		log.Debugf("vhost errorHandler %v", fVhost.ErrorHandler)
+		log.Debugf("vhost handler %v", fVhost.Handler)
 
 		// Set some values on the context
-		c.Locals("vhost.hostname", hostname)               // Hostname
-		c.Locals("vhost.websiteID", vhost.WebsiteID)       // Website ID
-		c.Locals("vhost.errorHandler", vhost.ErrorHandler) // Error Handler
+		c.Locals("vhost.hostname", hostname)                // Hostname
+		c.Locals("vhost.websiteID", fVhost.WebsiteID)       // Website ID
+		c.Locals("vhost.errorHandler", fVhost.ErrorHandler) // Error Handler
 
 		// Call the vhost's middleware
-		return vhost.Handler(c)
+		return fVhost.Handler(c)
 	}
 }
