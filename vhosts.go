@@ -328,3 +328,23 @@ func GetVhosts() *Vhosts {
 
 	return Vhs
 }
+
+// SetHandler sets the handler for the given hostname
+func SetHandler(hostname string, handler FiberHandler) error {
+	vhost, ok := Vhs.Get(hostname)
+	if !ok {
+		return errors.New("vhost not found")
+	}
+	vhost.Handler = handler
+	return nil
+}
+
+// SetErrorHandler sets the error handler for the given hostname
+func SetErrorHandler(hostname string, errorHandler FiberErrorHandler) error {
+	vhost, ok := Vhs.Get(hostname)
+	if !ok {
+		return errors.New("vhost not found")
+	}
+	vhost.ErrorHandler = errorHandler
+	return nil
+}
