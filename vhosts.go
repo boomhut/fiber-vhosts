@@ -193,7 +193,7 @@ func (v *Vhosts) ReloadHandlers() error {
 	// loop through the vhosts list
 	for i, vhost := range v.Vhosts {
 
-		// set the default handler if the path var is empty
+		// set the default handler if the path var is empty for the vhost
 		if vhost.Path == "" {
 			vhost.Handler = defaultHandler
 			vhost.ErrorHandler = defaultErrorHandler
@@ -215,7 +215,7 @@ func (v *Vhosts) ReloadHandlers() error {
 		// loop through the error handlers list
 		for errorHandlerTag, errorHandler := range v.errorHandlers {
 
-			// if the error handler tag matches the vhost path
+			// if the error handler tag matches the vhost path, set the error handler for the vhost
 			if errorHandlerTag == vhost.Path {
 				vhost.ErrorHandler = errorHandler
 				v.Vhosts[i] = vhost
@@ -528,4 +528,35 @@ func (v *Vhosts) SetErrorHandlerByTag(hostname, tag string) error {
 	// set the path to the error handler tag
 	vhost.Path = tag
 	return nil
+}
+
+// Vhost middleware for fiber app to handle virtual hosts based on hostname and path ( if any ). It sets the handler and error handler for the vhost based on the hostname and path ( if any )
+func VhostMiddleware(c *fiber.Ctx) error {
+
+	// get the hostname from the request
+	hostname := c.Hostname()
+
+	// get the path from the request
+	path := c.Path()
+
+	// get the vhost from the vhosts list
+	vhost, ok := Vhs.Get(hostname)
+	if !ok {
+		return c.Next()
+	}
+
+	// set the handler for the vhost
+	err := Vhs.SetHandlerByTag(hostname, path)
+	if err != nil {
+		return err
+	}
+
+	// set the error handler for the vhost
+	err = Vhs.SetErrorHandlerByTag(hostname, path)
+	if err != nil {
+		return err
+	}
+
+	// call the vhost handler
+	return vhost.Handler(c)
 }
