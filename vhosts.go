@@ -496,6 +496,26 @@ func (v *Vhosts) SetHandlerByTag(hostname, tag string) error {
 	return nil
 }
 
+// Lock locks the vhosts list
+func (v *Vhosts) Lock() {
+	v.mutex.Lock()
+}
+
+// Unlock unlocks the vhosts list
+func (v *Vhosts) Unlock() {
+	v.mutex.Unlock()
+}
+
+// RLock locks the vhosts list for reading
+func (v *Vhosts) RLock() {
+	v.mutex.RLock()
+}
+
+// RUnlock unlocks the vhosts list for reading
+func (v *Vhosts) RUnlock() {
+	v.mutex.RUnlock()
+}
+
 // SetErrorHandler sets the error handler for the given hostname
 func (v *Vhosts) SetErrorHandler(hostname string, errorHandler FiberErrorHandler) error {
 	vhost, ok := v.Get(hostname)
