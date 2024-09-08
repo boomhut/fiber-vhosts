@@ -229,46 +229,6 @@ func (v *Vhosts) ReloadHandlers() error {
 
 }
 
-// GobBase64Vhost returns the gob base64 encoded vhost
-func (v *Vhosts) GobBase64Vhost() (string, error) {
-	v.mutex.RLock()
-	defer v.mutex.RUnlock()
-	return GobBase64(v)
-}
-
-// GobBase64 returns the gob base64 encoded vhosts list
-func GobBase64(v *Vhosts) (string, error) {
-	// encode the vhosts list as gob
-	gobData, err := GobEncode(v)
-	if err != nil {
-		return "", err
-	}
-	// return the gob base64 encoded vhosts list
-	return Base64Encode(gobData), nil
-}
-
-// GobEncode encodes the vhosts list as gob
-func GobEncode(v *Vhosts) ([]byte, error) {
-	// encode the vhosts list as gob
-	gobData, err := GobEncode(v)
-	if err != nil {
-		return nil, err
-	}
-	// return the gob encoded vhosts list
-	return gobData, nil
-}
-
-// GobDecode decodes the gob encoded vhosts list
-func GobDecode(data []byte) (*Vhosts, error) {
-	// decode the gob encoded vhosts list
-	vhosts, err := GobDecode(data)
-	if err != nil {
-		return nil, err
-	}
-	// return the vhosts list
-	return vhosts, nil
-}
-
 // GetVhostnames returns the hostnames list ( []string )
 func GetVhostnames(v ...*Vhosts) []string {
 	var vh []Vhost
