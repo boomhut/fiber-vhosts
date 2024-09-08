@@ -2,6 +2,7 @@ package vhosts
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/gob"
 	"errors"
 	"os"
@@ -228,6 +229,46 @@ func (v *Vhosts) ReloadHandlers() error {
 
 }
 
+// GobBase64Vhost returns the gob base64 encoded vhost
+func (v *Vhosts) GobBase64Vhost() (string, error) {
+	v.mutex.RLock()
+	defer v.mutex.RUnlock()
+	return GobBase64(v)
+}
+
+// GobBase64 returns the gob base64 encoded vhosts list
+func GobBase64(v *Vhosts) (string, error) {
+	// encode the vhosts list as gob
+	gobData, err := GobEncode(v)
+	if err != nil {
+		return "", err
+	}
+	// return the gob base64 encoded vhosts list
+	return Base64Encode(gobData), nil
+}
+
+// GobEncode encodes the vhosts list as gob
+func GobEncode(v *Vhosts) ([]byte, error) {
+	// encode the vhosts list as gob
+	gobData, err := GobEncode(v)
+	if err != nil {
+		return nil, err
+	}
+	// return the gob encoded vhosts list
+	return gobData, nil
+}
+
+// GobDecode decodes the gob encoded vhosts list
+func GobDecode(data []byte) (*Vhosts, error) {
+	// decode the gob encoded vhosts list
+	vhosts, err := GobDecode(data)
+	if err != nil {
+		return nil, err
+	}
+	// return the vhosts list
+	return vhosts, nil
+}
+
 // GetVhostnames returns the hostnames list ( []string )
 func GetVhostnames(v ...*Vhosts) []string {
 	var vh []Vhost
@@ -282,6 +323,14 @@ func (v *Vhosts) Save(file string) error {
 // save saves the vhosts to the given file
 func save(file string, v *Vhosts) error {
 	return EncodeAsGob(file, v)
+}
+
+// Base64Encode encodes the given data as base64 encoded string
+func Base64Encode(data []byte) string {
+	base64out := make([]byte, 0)
+	base64.StdEncoding.Encode(base64out, data)
+	return string(base64out)
+
 }
 
 // EncodeAsGob encodes the given vhosts as gob and saves it to the given file
