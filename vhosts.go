@@ -204,17 +204,21 @@ func (v *Vhosts) ReloadHandlers() error {
 
 		// set the default handler if the path var is empty for the vhost
 		if vhost.Path == "" {
+			log.Debugf("\nsetting default handler for %s", vhost.Hostname)
 			vhost.Handler = defaultHandler
 			vhost.ErrorHandler = defaultErrorHandler
 			v.Vhosts[i] = vhost
 			continue
 		}
 
+		log.Debugf("\nsetting handler for %s", vhost.Hostname)
+
 		// loop through the handlers list
 		for handlerTag, handler := range v.handlers {
-
+			log.Debugf("\nhandlerTag %s", handlerTag)
 			// if the handler tag matches the vhost path
 			if handlerTag == vhost.Path {
+				log.Debugf("\nsetting handler for %s", vhost.Hostname)
 				vhost.Handler = handler
 				v.Vhosts[i] = vhost
 				break
