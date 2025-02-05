@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
 )
 
 // vhosts is the vhosts list
@@ -193,6 +194,13 @@ func (v *Vhosts) ReloadHandlers() error {
 
 	// loop through the vhosts list
 	for i, vhost := range v.Vhosts {
+
+		log.Debugf("\nvhost %d", i)
+		log.Debugf("\nvhost hostname %s", vhost.Hostname)
+		log.Debugf("\nvhost path %s", vhost.Path)
+		// comparing
+		log.Debugf("\ncomparing %s", vhost.Path)
+		log.Debugf("\ncomparing %s", vhost.Path)
 
 		// set the default handler if the path var is empty for the vhost
 		if vhost.Path == "" {
