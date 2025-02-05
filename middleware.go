@@ -1,6 +1,9 @@
 package vhosts
 
 import (
+	"reflect"
+	"runtime"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 )
@@ -38,6 +41,8 @@ func XVhost(vh *Vhosts) func(c *fiber.Ctx) error {
 		log.Debugf("vhost lastModified %d", fVhost.LastModified)
 		log.Debugf("vhost errorHandler %v", fVhost.ErrorHandler)
 		log.Debugf("vhost handler %v", fVhost.Handler)
+		// print function name
+		log.Debugf("vhost handler %s", runtime.FuncForPC(reflect.ValueOf(fVhost.Handler).Pointer()).Name())
 
 		// Set some values on the context
 		c.Locals("vhost.hostname", hostname)                // Hostname
